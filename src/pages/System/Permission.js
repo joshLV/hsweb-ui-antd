@@ -1,15 +1,21 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component, Fragment, PureComponent } from 'react';
 import { connect } from 'dva';
-import { Divider, Form, Table } from 'antd';
+import { Divider, Form, Modal, Steps, Table } from 'antd';
 import PageHeaderWrapper from '../../components/PageHeaderWrapper';
 import StandardTable from '../../components/StandardTable';
-
+const { Step } = Steps
 @connect(({ permission, loading }) => ({
   permission,
   loading: loading.models.permission,
 }))
 @Form.create()
-class Permission extends Component {
+class Permission extends PureComponent {
+
+  state={
+    selectedRows:[],
+    editModalVisible: false,
+    editFormValues: {},
+  };
 
   columns = [
     {
@@ -32,7 +38,7 @@ class Permission extends Component {
       title: '操作',
       render: (text, record) => (
         <Fragment>
-          <a href="">编辑</a>
+          <a onClick={()=> this.handleEditModalVisible(true,record)}>编辑</a>
           <Divider type="vertical" />
           <a href="">删除</a>
         </Fragment>
@@ -47,17 +53,29 @@ class Permission extends Component {
     });
   }
 
+  handleEditModalVisible = (flag,record)=>{
+    this.setState({
+      editModalVisible: !!flag,
+      editFormValues: record
+    })
+  };
+  handleSelectRows = rows =>{
+    this.setState({
+      selectedRows: rows,
+    });
+  };
 
   render() {
 
+    const { selectedRows,editFormValues } = this.state;
+
     const {permission: {data},loading} = this.props;
-
-    console.log(data, 'data-props');
-
     return (
       <PageHeaderWrapper title="权限管理">
         <StandardTable
-          selectedRows={[]}
+          rowKey={record=>record.id}
+          selectedRows={ selectedRows }
+          onSelectRow = {this.handleSelectRows}
           data={data}
           loading = {loading}
           columns = {this.columns}
@@ -69,3 +87,31 @@ class Permission extends Component {
 }
 
 export default Permission;
+
+
+class UpdateForm extends PureComponent {
+
+  static defaultProps = {
+    hanldeUpdate: () => {},
+    handleUpdateModalVisible:()=>{},
+    values: {},
+  }
+
+  render() {
+    return (
+      <Modal
+        width={640}
+        bodyStyle={{padding:'32px 40px 48px'}}
+        destroyOnClose
+        title="编辑权限"
+        visible="true"
+      >
+        <Steps style={{ marginBottom: 28 }} size="small" current={currentStep}>
+          <Step title="基本信息" />
+          <Step title="配置规则属性" />
+          <Step title="设定调度周期" />
+        </Steps>
+      </Modal>
+    );
+  }
+}
