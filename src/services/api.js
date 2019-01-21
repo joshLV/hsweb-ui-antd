@@ -14,8 +14,8 @@ export async function loginOut() {
   });
 }
 
-export async function queryPermission() {
-  return request('http://localhost:8089/permission');
+export async function queryPermission(params) {
+  return request(`http://localhost:8089/permission?${stringify(params)}`);
 }
 
 

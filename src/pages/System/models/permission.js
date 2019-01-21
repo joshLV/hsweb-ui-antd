@@ -11,8 +11,8 @@ export default {
   },
 
   effects: {
-    * fetchList(_, { call, put }) {
-      const response = yield call(queryPermission);
+    * fetchList({ payload }, { call, put }) {
+      const response = yield call(queryPermission,payload||{pageIndex:0,pageSize: 10});
       yield put({
         type: 'save',
         payload: response,
@@ -21,7 +21,6 @@ export default {
   },
   reducers: {
     save(state, action) {
-      console.log(action.payload);
       return {
         ...state,
         data:{
@@ -29,7 +28,7 @@ export default {
           pagination:{
             total: action.payload.result.total,
             pageSize:10,
-            current:1
+            current:0
           }
         }
       };
