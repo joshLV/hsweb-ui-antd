@@ -70,7 +70,9 @@ class UpdateForm extends PureComponent {
   ];
 
   handleSave = () => {
-    const { handleEditModalVisible } = this.props;
+    const { handleEditModalVisible,form,values } = this.props;
+    console.log(values,"table");
+    console.log(form.getFieldsValue(),"values");
     //保存数据
     message.success('配置成功');
     handleEditModalVisible();
@@ -151,7 +153,7 @@ class UpdateForm extends PureComponent {
             {...formItemLayout}
             label="备注"
           >
-            {getFieldDecorator('action', {})
+            {getFieldDecorator('describe', {})
             (<TextArea placeholder="" autosize={{ minRows: 2, maxRows: 6 }} />)}
           </Form.Item>
           <Form.Item
@@ -253,7 +255,7 @@ class Permission extends PureComponent {
     }, {});
 
     const params = {
-      pageIndex: pagination.current-1,
+      pageIndex: pagination.current,
       pageSize: pagination.pageSize,
       ...formValues,
       ...filters,
@@ -273,8 +275,7 @@ class Permission extends PureComponent {
 
     const { selectedRows, editFormValues, editModalVisible } = this.state;
 
-    const { permission: { data }, loading } = this.props;
-
+    const { permission: { data } ,loading} = this.props;
     const updateMethods = {
       handleEditModalVisible: this.handleEditModalVisible,
     };

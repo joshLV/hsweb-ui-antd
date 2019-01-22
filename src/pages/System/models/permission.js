@@ -12,10 +12,19 @@ export default {
 
   effects: {
     * fetchList({ payload }, { call, put }) {
-      const response = yield call(queryPermission,payload||{pageIndex:0,pageSize: 10});
+      let params = payload||{pageIndex: 0,pageSize:10};
+      const response = yield call(queryPermission,params);
+      const dataList = {
+        list:response.result.data,
+        pagination:{
+          total:response.result.total,
+          pageSize:params.pageSize,
+          current: params.pageIndex
+        }
+      };
       yield put({
         type: 'save',
-        payload: response,
+        payload: dataList,
       });
     },
   },
@@ -23,14 +32,7 @@ export default {
     save(state, action) {
       return {
         ...state,
-        data:{
-          list: action.payload.result.data,
-          pagination:{
-            total: action.payload.result.total,
-            pageSize:10,
-            current:0
-          }
-        }
+        data:action.payload,
       };
     },
   },
