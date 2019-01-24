@@ -18,7 +18,9 @@ export async function queryPermission(params) {
   return request(`http://localhost:8089/permission?${stringify(params)}`);
 }
 
-
+export async function queryUser(params) {
+  return request(`http://localhost:8089/user?${stringify(params)}`);
+}
 
 export async function queryProjectNotice() {
   return request('/api/project/notice');
