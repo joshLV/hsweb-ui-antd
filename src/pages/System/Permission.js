@@ -1,24 +1,85 @@
 import React, { Component, Fragment, PureComponent } from 'react';
 import { connect } from 'dva';
-import { Divider, Form, Modal, Steps, message, Table, Input, Select } from 'antd';
+import {
+  Divider,
+  Form,
+  Modal,
+  Steps,
+  message,
+  Table,
+  Input,
+  Select,
+  Popconfirm,
+  InputNumber,
+  Tabs,
+  Icon,
+  Switch,
+} from 'antd';
 import PageHeaderWrapper from '../../components/PageHeaderWrapper';
 import StandardTable from '../../components/StandardTable';
-const {TextArea} = Input;
+const { TextArea } = Input;
 const { Option } = Select;
+const TabPane = Tabs.TabPane;
 
 const getValue = obj =>
   Object.keys(obj)
     .map(key => obj[key])
     .join(',');
 
+const EditableContext = React.createContext();
+
+const EditableRow = ({ form, index, ...props }) => (
+  <EditableContext.Provider value={form}>
+    <tr {...props} />
+  </EditableContext.Provider>
+);
+
+const EditableFormRow = Form.create()(EditableRow);
+
+class EditableCell extends Component {
+  getInput = () => {
+    if (this.props.inputType === 'number') {
+      return <InputNumber />;
+    }
+    return <Input />;
+  };
+
+  render() {
+    const { editing, dataIndex, title, inputType, record, index, ...restProps } = this.props;
+    return (
+      <EditableContext.Consumer>
+        {form => {
+          const { getFieldDecorator } = form;
+          return (
+            <td {...restProps}>
+              {editing ? (
+                <Form.Item style={{ margin: 0 }}>
+                  {getFieldDecorator(dataIndex, {
+                    rules: [
+                      {
+                        required: true,
+                        message: `Please Input ${title}!`,
+                      },
+                    ],
+                    initialValue: record[dataIndex],
+                  })(this.getInput())}
+                </Form.Item>
+              ) : (
+                restProps.children
+              )}
+            </td>
+          );
+        }}
+      </EditableContext.Consumer>
+    );
+  }
+}
+
 @Form.create()
 class UpdateForm extends PureComponent {
-
   static defaultProps = {
-    hanldeUpdate: () => {
-    },
-    handleEditModalVisible: () => {
-    },
+    hanldeUpdate: () => {},
+    handleEditModalVisible: () => {},
     values: {},
   };
 
@@ -32,8 +93,10 @@ class UpdateForm extends PureComponent {
         describe: props.values.describe,
         supportDataAccessTypes: props.values.supportDataAccessTypes || [],
       },
-    }
-  };
+      editingKey: '',
+      values: props.values.actions,
+    };
+  }
 
   columns = [
     {
@@ -50,36 +113,100 @@ class UpdateForm extends PureComponent {
     {
       title: '默认选中',
       dataIndex: 'defaultCheck',
-      editable: true,
+      // editable: true,
       render: (text, record) => (
-        text ? '是' : '否'
+        // text ? "是":"否",
+        <Switch
+          checkedChildren="是"
+          unCheckedChildren="否"
+          defaultChecked={text}
+          onChange={this.onChange}
+        />
       ),
     },
     {
       title: '操作',
       dataIndex: '',
-      render: (text, record) => (
-        <Fragment>
-          <a href="">编辑</a>
-          <Divider type="vertical"/>
-          <a href="">删除</a>
-        </Fragment>
-      ),
+      render: (text, record) => {
+        const editable = this.isEditing(record);
+        return (
+          <div>
+            {editable ? (
+              <span>
+                <EditableContext.Consumer>
+                  {form => (
+                    <a
+                      href="javascript:;"
+                      onClick={() => this.save(form, record.action)}
+                      style={{ marginRight: 8 }}
+                    >
+                      保存
+                    </a>
+                  )}
+                </EditableContext.Consumer>
+                <Popconfirm title="Sure to cancel?" onConfirm={() => this.cancel(record.action)}>
+                  <a>取消</a>
+                </Popconfirm>
+              </span>
+            ) : (
+              <a onClick={() => this.edit(record.action)}>编辑</a>
+            )}
+          </div>
+        );
+      },
     },
-
   ];
 
+  onChange = (record, checked) => {
+    console.log(record, checked, '是否选中');
+  };
+
   handleSave = () => {
-    const { handleEditModalVisible,form,values } = this.props;
-    console.log(values,"table");
-    console.log(form.getFieldsValue(),"values");
+    const { handleEditModalVisible, form, values } = this.props;
+    console.log(values, 'table');
+    console.log(form.getFieldsValue(), 'values');
     //保存数据
     message.success('配置成功');
     handleEditModalVisible();
   };
 
-  handleSelect = value =>{
+  handleSelect = value => {};
+
+  isEditing = record => record.action === this.state.editingKey;
+
+  cancel = () => {
+    this.setState({
+      editingKey: '',
+    });
   };
+
+  save(form, key) {
+    form.validateFields((error, row) => {
+      if (error) {
+        return;
+      }
+      const newData = [...this.state.values];
+      const index = newData.findIndex(item => key === item.action);
+      if (index > -1) {
+        const item = newData[index];
+        newData.splice(index, 1, {
+          ...item,
+          ...row,
+        });
+        this.setState({ values: newData, editingKey: '' });
+      } else {
+        newData.push(row);
+        this.setState({ values: newData, editingKey: '' });
+      }
+    });
+    console.log(this.state.values, 'values');
+  }
+
+  edit(key) {
+    this.setState({
+      editingKey: key,
+    });
+  }
 
   render() {
     const { editModalVisible, handleEditModalVisible, values } = this.props;
@@ -96,21 +223,19 @@ class UpdateForm extends PureComponent {
     };
 
     const allSupportDataAccessTypes = [
-      {id: "DENY_FIELDS", text: "禁止访问字段"},
-      {id: "ONLY_SELF", text: "仅限本人"},
-      {id: "POSITION_SCOPE", text: "仅限本人及下属"},
-      {id: "DEPARTMENT_SCOPE", text: "所在部门"},
-      {id: "ORG_SCOPE", text: "所在机构"},
-      {id: "CUSTOM_SCOPE_ORG_SCOPE_", text: "自定义设置-机构"},
-      {id: "CUSTOM_SCOPE_DEPARTMENT_SCOPE_", text: "自定义设置-部门"},
-      {id: "CUSTOM_SCOPE_POSITION_SCOPE_", text: "自定义设置-岗位"}
+      { id: 'DENY_FIELDS', text: '禁止访问字段' },
+      { id: 'ONLY_SELF', text: '仅限本人' },
+      { id: 'POSITION_SCOPE', text: '仅限本人及下属' },
+      { id: 'DEPARTMENT_SCOPE', text: '所在部门' },
+      { id: 'ORG_SCOPE', text: '所在机构' },
+      { id: 'CUSTOM_SCOPE_ORG_SCOPE_', text: '自定义设置-机构' },
+      { id: 'CUSTOM_SCOPE_DEPARTMENT_SCOPE_', text: '自定义设置-部门' },
+      { id: 'CUSTOM_SCOPE_POSITION_SCOPE_', text: '自定义设置-岗位' },
     ];
     const selectChildren = [];
     for (let i = 1; i < allSupportDataAccessTypes.length; i++) {
       selectChildren.push(
-        <Option key={allSupportDataAccessTypes[i].id}>
-          {allSupportDataAccessTypes[i].text}
-        </Option>
+        <Option key={allSupportDataAccessTypes[i].id}>{allSupportDataAccessTypes[i].text}</Option>
       );
     }
     const {
@@ -118,10 +243,34 @@ class UpdateForm extends PureComponent {
     } = this.props;
 
     const { formValues } = this.state;
+
+    const components = {
+      body: {
+        row: EditableFormRow,
+        cell: EditableCell,
+      },
+    };
+
+    const columns = this.columns.map(col => {
+      if (!col.editable) {
+        return col;
+      }
+      return {
+        ...col,
+        onCell: record => ({
+          record,
+          inputType: 'text',
+          dataIndex: col.dataIndex,
+          title: col.title,
+          editing: this.isEditing(record),
+        }),
+      };
+    });
+
     return (
       <Modal
         width={800}
-        bodyStyle={{ padding: '32px 40px 48px' }}
+        bodyStyle={{ padding: 'auto' }}
         destroyOnClose
         title="编辑权限"
         visible={editModalVisible}
@@ -129,53 +278,62 @@ class UpdateForm extends PureComponent {
         afterClose={() => handleEditModalVisible()}
         onOk={this.handleSave}
       >
-        <Form>
-          <Form.Item
-            {...formItemLayout}
-            label="权限标识(ID)"
+        <Tabs defaultActiveKey="1">
+          <TabPane
+            tab={
+              <span>
+                <Icon type="profile" />
+                基本信息
+              </span>
+            }
+            key="1"
           >
-            {getFieldDecorator('id', {
-              initialValue: formValues.id,
-            })
-            (<Input/>)}
-          </Form.Item>
-          <Form.Item
-            {...formItemLayout}
-            label="权限名称"
-          >
-            {getFieldDecorator('name', {
-              initialValue: formValues.name,
-            })
-            (<Input/>)}
+            <Form>
+              <Form.Item {...formItemLayout} label="权限标识(ID)">
+                {getFieldDecorator('id', {
+                  initialValue: formValues.id,
+                })(<Input />)}
+              </Form.Item>
+              <Form.Item {...formItemLayout} label="权限名称">
+                {getFieldDecorator('name', {
+                  initialValue: formValues.name,
+                })(<Input />)}
+              </Form.Item>
+              <Form.Item {...formItemLayout} label="备注">
+                {getFieldDecorator('describe', {})(
+                  <TextArea placeholder="" autosize={{ minRows: 2, maxRows: 6 }} />
+                )}
+              </Form.Item>
+              <Form.Item {...formItemLayout} label="支持的数据权限控制方式">
+                {getFieldDecorator('supportDataAccessTypes', {})(
+                  <Select mode="multiple" style={{ width: '100%' }} onChange={this.handleSelect}>
+                    {selectChildren}
+                  </Select>
+                )}
+              </Form.Item>
+            </Form>
 
-          </Form.Item>
-          <Form.Item
-            {...formItemLayout}
-            label="备注"
+            <Table
+              components={components}
+              bordered
+              rowKey={record => record.action}
+              dataSource={this.state.values}
+              columns={columns}
+              rowClassName="editable-row"
+            />
+          </TabPane>
+          <TabPane
+            tab={
+              <span>
+                <Icon type="area-chart" />
+                数据视图
+              </span>
+            }
+            key="2"
           >
-            {getFieldDecorator('describe', {})
-            (<TextArea placeholder="" autosize={{ minRows: 2, maxRows: 6 }} />)}
-          </Form.Item>
-          <Form.Item
-            {...formItemLayout}
-            label="支持的数据权限控制方式"
-          >
-            {getFieldDecorator('supportDataAccessTypes', {})
-            (<Select
-              mode="multiple"
-              style={{width:'100%'}}
-              onChange={this.handleSelect}
-            >
-              {selectChildren}
-            </Select>)}
-          </Form.Item>
-        </Form>
-
-        <Table
-          rowKey={record => record.action}
-          dataSource={values.actions}
-          columns={this.columns}
-        />
+            数据视图
+          </TabPane>
+        </Tabs>
       </Modal>
     );
   }
@@ -187,7 +345,6 @@ class UpdateForm extends PureComponent {
 }))
 @Form.create()
 class Permission extends PureComponent {
-
   state = {
     selectedRows: [],
     editModalVisible: false,
@@ -206,6 +363,9 @@ class Permission extends PureComponent {
     {
       title: '状态',
       dataIndex: 'status',
+      render: (text, record) => {
+        return 1 === text ? '正常' : '';
+      },
     },
     {
       title: '类型',
@@ -216,7 +376,7 @@ class Permission extends PureComponent {
       render: (text, record) => (
         <Fragment>
           <a onClick={() => this.handleEditModalVisible(true, record)}>编辑</a>
-          <Divider type="vertical"/>
+          <Divider type="vertical" />
           <a href="">删除</a>
         </Fragment>
       ),
@@ -243,8 +403,8 @@ class Permission extends PureComponent {
     });
   };
 
-  handleStandardTableChange = (pagination,filtersArg,sorter) =>{
-    console.log(pagination,filtersArg,sorter,"翻页");
+  handleStandardTableChange = (pagination, filtersArg, sorter) => {
+    console.log(pagination, filtersArg, sorter, '翻页');
     const { dispatch } = this.props;
     const { formValues } = this.state;
 
@@ -261,21 +421,23 @@ class Permission extends PureComponent {
       ...filters,
     };
 
-    if (sorter.field){
+    if (sorter.field) {
       params.sorter = `${sorter.field}_${sorter.order}}`;
     }
 
     dispatch({
-      type:'permission/fetchList',
+      type: 'permission/fetchList',
       payload: params,
     });
   };
 
   render() {
-
     const { selectedRows, editFormValues, editModalVisible } = this.state;
 
-    const { permission: { data } ,loading} = this.props;
+    const {
+      permission: { data },
+      loading,
+    } = this.props;
     const updateMethods = {
       handleEditModalVisible: this.handleEditModalVisible,
     };
@@ -294,15 +456,12 @@ class Permission extends PureComponent {
           <UpdateForm
             {...updateMethods}
             editModalVisible={editModalVisible}
-            values={editFormValues}/>
+            values={editFormValues}
+          />
         ) : null}
-
       </PageHeaderWrapper>
-
     );
   }
 }
 
 export default Permission;
-
-
