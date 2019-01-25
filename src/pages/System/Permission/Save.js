@@ -1,26 +1,8 @@
-import React, { Component, Fragment, PureComponent } from 'react';
-import { connect } from 'dva';
-import {
-  Divider,
-  Form,
-  Modal,
-  Steps,
-  message,
-  Table,
-  Input,
-  Select,
-  Popconfirm,
-  InputNumber,
-  Tabs,
-  Icon,
-  Switch, Row, Col, Button,
-} from 'antd';
-import PageHeaderWrapper from '../../components/PageHeaderWrapper';
-import StandardTable from '../../components/StandardTable';
-import styles from '../List/TableList.less';
+import React, { Component, PureComponent } from 'react';
+import { Icon, Input, Form, InputNumber, message, Modal, Popconfirm, Select, Switch, Table, Tabs } from 'antd';
+const TabPane = Tabs.TabPane;
 const { TextArea } = Input;
 const { Option } = Select;
-const TabPane = Tabs.TabPane;
 
 const getValue = obj =>
   Object.keys(obj)
@@ -35,6 +17,19 @@ const EditableRow = ({ form, index, ...props }) => (
   </EditableContext.Provider>
 );
 
+const formItemLayout = {
+  labelCol: {
+    xs: { span: 20 },
+    sm: { span: 6 },
+  },
+  wrapperCol: {
+    xs: { span: 20 },
+    sm: { span: 14 },
+  },
+  style:{
+    height:20
+  }
+};
 const EditableFormRow = Form.create()(EditableRow);
 
 class EditableCell extends Component {
@@ -77,7 +72,7 @@ class EditableCell extends Component {
 }
 
 @Form.create()
-class UpdateForm extends PureComponent {
+class Save extends PureComponent {
   static defaultProps = {
     hanldeUpdate: () => {},
     handleEditModalVisible: () => {},
@@ -87,7 +82,7 @@ class UpdateForm extends PureComponent {
 
   constructor(props) {
     super(props);
-
+    //子组建接受数据
     this.state = {
       formValues: {
         name: props.values.name,
@@ -97,8 +92,15 @@ class UpdateForm extends PureComponent {
       },
       editingKey: '',
       values: props.values.actions,
-      title: props.title,
+      title: "新建",
     };
+  }
+
+  componentDidMount() {
+    const { values } = this.props;
+    this.setState({
+      formValues:values,
+    });
   }
 
   columns = [
@@ -222,20 +224,6 @@ class UpdateForm extends PureComponent {
   render() {
     const { editModalVisible, handleEditModalVisible, values } = this.props;
 
-    const formItemLayout = {
-      labelCol: {
-        xs: { span: 20 },
-        sm: { span: 6 },
-      },
-      wrapperCol: {
-        xs: { span: 20 },
-        sm: { span: 14 },
-      },
-      style:{
-        height:20
-      }
-    };
-
     const allSupportDataAccessTypes = [
       { id: 'DENY_FIELDS', text: '禁止访问字段' },
       { id: 'ONLY_SELF', text: '仅限本人' },
@@ -246,6 +234,7 @@ class UpdateForm extends PureComponent {
       { id: 'CUSTOM_SCOPE_DEPARTMENT_SCOPE_', text: '自定义设置-部门' },
       { id: 'CUSTOM_SCOPE_POSITION_SCOPE_', text: '自定义设置-岗位' },
     ];
+
     const selectChildren = [];
     for (let i = 1; i < allSupportDataAccessTypes.length; i++) {
       selectChildren.push(
@@ -281,6 +270,7 @@ class UpdateForm extends PureComponent {
       };
     });
 
+    console.log(this.props,"r-props");
     return (
       <Modal
         width={700}
@@ -354,171 +344,4 @@ class UpdateForm extends PureComponent {
   }
 }
 
-@connect(({ permission, loading }) => ({
-  permission,
-  loading: loading.models.permission,
-}))
-@Form.create()
-class Permission extends PureComponent {
-  state = {
-    selectedRows: [],
-    editModalVisible: false,
-    editFormValues: {},
-  };
-
-  columns = [
-    {
-      title: 'id',
-      dataIndex: 'id',
-    },
-    {
-      title: '名称',
-      dataIndex: 'name',
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      render: (text, record) => {
-        return 1 === text ? '正常' : '';
-      },
-    },
-    {
-      title: '类型',
-      dataIndex: 'type',
-    },
-    {
-      title: '操作',
-      render: (text, record) => (
-        <Fragment>
-          <a onClick={() => this.handleEditModalVisible(true, record)}>编辑</a>
-          <Divider type="vertical" />
-          <a href="">删除</a>
-        </Fragment>
-      ),
-    },
-  ];
-
-  componentDidMount() {
-    const { dispatch } = this.props;
-    dispatch({
-      type: 'permission/fetchList',
-    });
-  }
-
-  handleEditModalVisible = (flag, record) => {
-    this.setState({
-      editModalVisible: !!flag,
-      editFormValues: record || {},
-    });
-  };
-
-  handleSelectRows = rows => {
-    this.setState({
-      selectedRows: rows,
-    });
-  };
-
-  handleStandardTableChange = (pagination, filtersArg, sorter) => {
-    console.log(pagination, filtersArg, sorter, '翻页');
-    const { dispatch } = this.props;
-    const { formValues } = this.state;
-
-    const filters = Object.keys(filtersArg).reduce((obj, key) => {
-      const newObj = { ...obj };
-      newObj[key] = getValue(filtersArg[key]);
-      return newObj;
-    }, {});
-
-    const params = {
-      pageIndex: pagination.current-1,
-      pageSize: pagination.pageSize,
-      ...formValues,
-      ...filters,
-    };
-
-    if (sorter.field) {
-      params.sorter = `${sorter.field}_${sorter.order}}`;
-    }
-
-    dispatch({
-      type: 'permission/fetchList',
-      payload: params,
-    });
-  };
-
-  renderSimpleForm() {
-    const {
-      form: { getFieldDecorator },
-    } = this.props;
-    return (
-      <Form onSubmit={this.handleSearch} layout="inline">
-        <Row gutter={{ md: 8, lg: 24, xl: 48 }}>
-          <Col md={8} sm={24}>
-            <Form.Item label="ID">
-              {getFieldDecorator('id')(<Input placeholder="请输入" />)}
-            </Form.Item>
-          </Col>
-          <Col md={8} sm={24}>
-            <Form.Item label="名称">
-              {getFieldDecorator('name')(<Input placeholder="请输入" />)}
-            </Form.Item>
-          </Col>
-          <Col md={8} sm={24}>
-            <span className={styles.submitButtons}>
-              <Button icon="search" type="primary" htmlType="submit">
-                查询
-              </Button>
-              <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
-                重置
-              </Button>
-
-            </span>
-          </Col>
-        </Row>
-      </Form>
-    );
-  }
-
-
-  render() {
-    const { selectedRows, editFormValues, editModalVisible } = this.state;
-
-    const {
-      permission: { data },
-      loading,
-    } = this.props;
-    const updateMethods = {
-      handleEditModalVisible: this.handleEditModalVisible,
-    };
-    return (
-      <PageHeaderWrapper title="权限管理">
-        <div className={styles.tableListForm}>{this.renderSimpleForm()}</div>
-        <div className={styles.tableListOperator}>
-          <Button type="primary" icon="plus" style={{ marginLeft: 8,marginBottom:10 }} onClick={()=>this.handleEditModalVisible(true, {})}>
-            新建权限
-          </Button>
-        </div>
-        <StandardTable
-          rowKey={record => record.id}
-          selectedRows={selectedRows}
-          onSelectRow={this.handleSelectRows}
-          data={data}
-          loading={loading}
-          columns={this.columns}
-          onChange={this.handleStandardTableChange}
-        />
-
-        {editFormValues && Object.keys(editFormValues).length ? (
-          <UpdateForm
-            {...updateMethods}
-            editModalVisible={editModalVisible}
-            values={editFormValues}
-            title = "编辑权限"
-          />
-        ) : <UpdateForm {...updateMethods} editModalVisible={editModalVisible}/>}
-      </PageHeaderWrapper>
-    );
-  }
-}
-
-export default Permission;
+export default Save;

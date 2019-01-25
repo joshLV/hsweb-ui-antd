@@ -19,7 +19,7 @@ export default {
         pagination:{
           total:response.result.total,
           pageSize:params.pageSize,
-          current: params.pageIndex
+          current: params.pageIndex+1
         }
       };
       yield put({

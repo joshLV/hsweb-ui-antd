@@ -60,7 +60,7 @@ export default [
           {
             path: '/system/permission',
             name: 'permission',
-            component: './System/Permission',
+            component: './System/Permission/List',
           },
           {
             path: '/system/role',
