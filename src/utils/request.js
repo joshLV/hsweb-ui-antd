@@ -27,10 +27,13 @@ const checkStatus = response => {
     return response;
   }
   const errortext = codeMessage[response.status] || response.statusText;
-  notification.error({
-    message: `请求错误 ${response.status}: ${response.url}`,
-    description: errortext,
-  });
+  //401的不提示错误
+  if (response.status!==401){
+    notification.error({
+      message: `请求错误 ${response.status}: ${response.url}`,
+      description: errortext,
+    });
+  }
   const error = new Error(errortext);
   error.name = response.status;
   error.response = response;
@@ -135,8 +138,9 @@ export default function request(url, option) {
         // @HACK
         /* eslint-disable no-underscore-dangle */
         window.g_app._store.dispatch({
-          type: 'login/logout',
+          type: 'api/loginOut',
         });
+        router.push('/user/login');
         return;
       }
       // environment should not be used

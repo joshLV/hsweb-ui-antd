@@ -1,5 +1,6 @@
 import React, { Component, PureComponent } from 'react';
 import { Icon, Input, Form, InputNumber, message, Modal, Popconfirm, Select, Switch, Table, Tabs } from 'antd';
+
 const TabPane = Tabs.TabPane;
 const { TextArea } = Input;
 const { Option } = Select;
@@ -26,18 +27,18 @@ const formItemLayout = {
     xs: { span: 20 },
     sm: { span: 14 },
   },
-  style:{
-    height:20
-  }
+  style: {
+    height: 20,
+  },
 };
 const EditableFormRow = Form.create()(EditableRow);
 
 class EditableCell extends Component {
   getInput = () => {
     if (this.props.inputType === 'number') {
-      return <InputNumber />;
+      return <InputNumber/>;
     }
-    return <Input />;
+    return <Input/>;
   };
 
   render() {
@@ -74,34 +75,22 @@ class EditableCell extends Component {
 @Form.create()
 class Save extends PureComponent {
   static defaultProps = {
-    hanldeUpdate: () => {},
-    handleEditModalVisible: () => {},
+    hanldeUpdate: () => {
+    },
+    handleEditModalVisible: () => {
+    },
     values: {},
-    title:"",
+    title: '',
   };
 
   constructor(props) {
     super(props);
-    //子组建接受数据
     this.state = {
-      formValues: {
-        name: props.values.name,
-        id: props.values.id,
-        describe: props.values.describe,
-        supportDataAccessTypes: props.values.supportDataAccessTypes || [],
-      },
-      editingKey: '',
-      values: props.values.actions,
-      title: "新建",
+      formValues: {},
     };
+    const {editFormValues} =this.state;
   }
 
-  componentDidMount() {
-    const { values } = this.props;
-    this.setState({
-      formValues:values,
-    });
-  }
 
   columns = [
     {
@@ -163,11 +152,11 @@ class Save extends PureComponent {
   ];
 
   defaultActionData = [
-    {"action": "query", "describe": "查询列表", defaultCheck: true},
-    {"action": "get", "describe": "查询明细", defaultCheck: true},
-    {"action": "add", "describe": "新增", defaultCheck: true},
-    {"action": "update", "describe": "修改", defaultCheck: true},
-    {"action": "delete", "describe": "删除", defaultCheck: false}
+    { 'action': 'query', 'describe': '查询列表', defaultCheck: true },
+    { 'action': 'get', 'describe': '查询明细', defaultCheck: true },
+    { 'action': 'add', 'describe': '新增', defaultCheck: true },
+    { 'action': 'update', 'describe': '修改', defaultCheck: true },
+    { 'action': 'delete', 'describe': '删除', defaultCheck: false },
   ];
 
   onChange = (record, checked) => {
@@ -183,7 +172,8 @@ class Save extends PureComponent {
     handleEditModalVisible();
   };
 
-  handleSelect = value => {};
+  handleSelect = value => {
+  };
 
   isEditing = record => record.action === this.state.editingKey;
 
@@ -212,17 +202,22 @@ class Save extends PureComponent {
         this.setState({ values: newData, editingKey: '' });
       }
     });
-    console.log(this.state.values, 'values');
   }
 
   edit(key) {
     this.setState({
       editingKey: key,
     });
-  }
+  };
+
+  getEditData(values){
+  };
 
   render() {
+
     const { editModalVisible, handleEditModalVisible, values } = this.props;
+
+    this.getEditData(values);
 
     const allSupportDataAccessTypes = [
       { id: 'DENY_FIELDS', text: '禁止访问字段' },
@@ -234,18 +229,16 @@ class Save extends PureComponent {
       { id: 'CUSTOM_SCOPE_DEPARTMENT_SCOPE_', text: '自定义设置-部门' },
       { id: 'CUSTOM_SCOPE_POSITION_SCOPE_', text: '自定义设置-岗位' },
     ];
-
     const selectChildren = [];
     for (let i = 1; i < allSupportDataAccessTypes.length; i++) {
       selectChildren.push(
-        <Option key={allSupportDataAccessTypes[i].id}>{allSupportDataAccessTypes[i].text}</Option>
+        <Option key={allSupportDataAccessTypes[i].id}>{allSupportDataAccessTypes[i].text}</Option>,
       );
     }
     const {
       form: { getFieldDecorator },
     } = this.props;
 
-    const { formValues } = this.state;
 
     const components = {
       body: {
@@ -270,13 +263,12 @@ class Save extends PureComponent {
       };
     });
 
-    console.log(this.props,"r-props");
     return (
       <Modal
         width={700}
         bodyStyle={{ padding: 'auto' }}
         destroyOnClose
-        title={this.state.title}
+        title={values.id?"编辑":"新建"}
         visible={editModalVisible}
         onCancel={() => handleEditModalVisible(false, values)}
         afterClose={() => handleEditModalVisible()}
@@ -286,33 +278,33 @@ class Save extends PureComponent {
           <TabPane
             tab={
               <span>
-                <Icon type="profile" />
+                <Icon type="profile"/>
                 基本信息
               </span>
             }
             key="1"
           >
-            <Form style={{marginBottom:50}}>
-              <Form.Item {...formItemLayout} label="权限标识(ID)" >
+            <Form style={{ marginBottom: 50 }}>
+              <Form.Item {...formItemLayout} label="权限标识(ID)">
                 {getFieldDecorator('id', {
-                  initialValue: formValues.id,
-                })(<Input />)}
+                  initialValue: values.id,
+                })(<Input/>)}
               </Form.Item>
-              <Form.Item {...formItemLayout} label="权限名称" >
+              <Form.Item {...formItemLayout} label="权限名称">
                 {getFieldDecorator('name', {
-                  initialValue: formValues.name,
-                })(<Input />)}
+                  initialValue: values.name,
+                })(<Input/>)}
               </Form.Item>
-              <Form.Item {...formItemLayout} label="备注" >
+              <Form.Item {...formItemLayout} label="备注">
                 {getFieldDecorator('describe', {})(
-                  <TextArea placeholder="" autosize={{ minRows: 2, maxRows: 6 }} />
+                  <TextArea placeholder="" autosize={{ minRows: 2, maxRows: 6 }}/>,
                 )}
               </Form.Item>
-              <Form.Item {...formItemLayout} label="支持的数据权限控制方式" >
+              <Form.Item {...formItemLayout} label="支持的数据权限控制方式">
                 {getFieldDecorator('supportDataAccessTypes', {})(
                   <Select mode="multiple" style={{ width: '100%' }} onChange={this.handleSelect}>
                     {selectChildren}
-                  </Select>
+                  </Select>,
                 )}
               </Form.Item>
             </Form>
@@ -322,7 +314,7 @@ class Save extends PureComponent {
               bordered
               size="small"
               rowKey={record => record.action}
-              dataSource={this.state.values||this.defaultActionData}
+              dataSource={values.action || this.defaultActionData}
               columns={columns}
               rowClassName="editable-row"
             />
@@ -330,7 +322,7 @@ class Save extends PureComponent {
           <TabPane
             tab={
               <span>
-                <Icon type="area-chart" />
+                <Icon type="area-chart"/>
                 数据视图
               </span>
             }

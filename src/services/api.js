@@ -9,6 +9,7 @@ export async function userLogin(params) {
 }
 
 export async function loginOut() {
+  console.log("退出登录====");
   return request('http://localhost:8089/user-lock/logout',{
     method: 'PUT',
   });

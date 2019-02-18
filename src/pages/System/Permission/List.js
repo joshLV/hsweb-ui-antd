@@ -63,6 +63,7 @@ class List extends PureComponent {
       editModalVisible: !!flag,
       editFormValues: record || {},
     });
+
   };
 
   handleSelectRows = rows => {
