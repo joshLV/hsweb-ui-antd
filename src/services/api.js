@@ -16,6 +16,8 @@ export async function loginOut() {
 }
 
 export async function queryPermission(params) {
+  console.log(`${stringify(params)}`,"参数");
+
   return request(`http://localhost:8089/permission?${stringify(params)}`);
 }
 

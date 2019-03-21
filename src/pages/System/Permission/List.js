@@ -100,6 +100,57 @@ class List extends PureComponent {
     });
   };
 
+  handleSearch = e=>{
+    e.preventDefault();
+    const { dispatch, form } = this.props;
+    form.validateFields((err, fieldsValue) => {
+      if (err) return;
+
+      const values = {
+        ...fieldsValue,
+      };
+
+      this.setState({
+        formValues: values,
+      });
+      let a =this.encodeQueryParam(values);
+      console.log(a,"encode-Params");
+      dispatch({
+        type: 'permission/fetchList',
+        payload: values,
+      });
+    });
+
+  };
+
+  encodeQueryParam=(data)=>{
+    const queryParam = {};
+    let index = 0;
+    for (const f in data){
+      if (data[f]==="") continue;
+      if (f.indexOf('$LIKE')!==-1 && data[f].indexOf('%') ===-1) data[f]="%"+data[f]+"%";
+      if (f.indexOf('$START')!==-1) data[f]="%"+data[f];
+      if (f.indexOf('$END')!==-1)data[f]=data[f]+"%";
+      queryParam["terms["+(index)+"].column"]=f;
+      queryParam["terms["+(index)+"].value"]=data[f];
+      index++
+    }
+    return queryParam;
+  }
+
+  handleFormReset = () =>{
+    console.log("重置");
+    const { form, dispatch } = this.props;
+    form.resetFields();
+    this.setState({
+      formValues: {},
+    });
+    dispatch({
+      type: 'permission/fetchList',
+      payload: {},
+    });
+  };
+
   renderSimpleForm() {
     const {
       form: { getFieldDecorator },
